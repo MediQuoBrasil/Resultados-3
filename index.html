@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Indicadores — Setor de Saúde</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{
+  --primary:#4a1ea7;--primary-dark:#3a1585;--primary-darker:#2a0f63;
+  --primary-light:#6b3fd4;--primary-lighter:#8c60e0;
+  --primary-subtle:#ece5f8;--primary-ghost:#f6f2fc;
+  --accent-magenta:#b83dba;--accent-cyan:#38bdf8;--accent-amber:#f59e0b;
+  --accent-emerald:#10b981;--accent-rose:#f43f5e;--accent-orange:#f97316;
+  --text-primary:#1a1033;--text-secondary:#5c4d73;--text-muted:#9585ab;
+  --surface:#ffffff;--surface-alt:#f8f5fd;--border:#e8e0f3;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var(--text-primary);min-height:100vh}
+
+/* ── Loading ── */
+#loading-overlay{position:fixed;inset:0;background:var(--surface-alt);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
+#loading-overlay.hide{opacity:0;pointer-events:none}
+.spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-overlay p{margin-top:16px;font-weight:600;color:var(--text-secondary);font-size:14px}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,var(--primary-darker) 0%,var(--primary) 50%,var(--primary-light) 100%);padding:40px 48px 36px;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-60%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,.06) 0%,transparent 70%);border-radius:50%}
+.header::after{content:'';position:absolute;bottom:-40%;left:20%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,255,255,.04) 0%,transparent 70%);border-radius:50%}
+.header h1{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.5px;position:relative;z-index:1}
+.header p{font-size:14px;font-weight:400;color:rgba(255,255,255,.65);margin-top:6px;position:relative;z-index:1}
+
+/* ── Container ── */
+.container{max-width:1320px;margin:0 auto;padding:32px 32px 60px}
+
+/* ── KPI Strip ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-bottom:36px}
+.kpi-card{background:var(--surface);border-radius:16px;padding:22px 24px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(74,30,167,.10)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--primary),var(--primary-light))}
+.kpi-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:8px}
+.kpi-value{font-size:28px;font-weight:800;color:var(--primary);line-height:1}
+.kpi-sub{font-size:11px;font-weight:500;color:var(--text-secondary);margin-top:5px}
+
+/* ── Section Title ── */
+.section-title{font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:20px;padding-left:14px;border-left:4px solid var(--primary)}
+
+/* ── Chart Grid ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:36px}
+.chart-card{background:var(--surface);border-radius:20px;padding:32px;border:1px solid var(--border);transition:box-shadow .3s}
+.chart-card:hover{box-shadow:0 4px 20px rgba(74,30,167,.07)}
+.chart-card h3{font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px}
+.chart-card .chart-subtitle{font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:24px}
+.chart-wrapper{position:relative;width:100%;display:flex;justify-content:center;align-items:center}
+.chart-wrapper.pie-wrapper{height:300px}
+.chart-wrapper.bar-wrapper{height:320px}
+.chart-wrapper canvas{max-width:100%}
+.full-width{grid-column:1/-1}
+
+/* ── Attendance Cards ── */
+.attendance-highlight{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:36px}
+.att-card{background:var(--surface);border-radius:20px;padding:32px;border:1px solid var(--border);display:flex;align-items:center;gap:28px}
+.att-ring{width:120px;height:120px;flex-shrink:0;position:relative}
+.att-ring canvas{width:100%!important;height:100%!important}
+.att-ring-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.att-ring-label .pct{font-size:26px;font-weight:800;line-height:1}
+.att-ring-label .pct-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.att-info h4{font-size:16px;font-weight:700;margin-bottom:4px}
+.att-info p{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.att-info .att-number{font-size:28px;font-weight:800;margin-top:8px}
+.green{color:var(--accent-emerald)}.red{color:var(--accent-rose)}
+
+/* ── Derma Card ── */
+.derma-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:36px}
+.derma-card{background:var(--surface);border-radius:20px;padding:32px;border:1px solid var(--border)}
+.derma-card h4{font-size:15px;font-weight:700;margin-bottom:16px}
+.derma-stat{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.derma-stat:last-child{border-bottom:none}
+.derma-stat .label{font-size:13px;font-weight:500;color:var(--text-secondary)}
+.derma-stat .val{font-size:14px;font-weight:700;color:var(--text-primary)}
+.derma-stat .val.highlight-green{color:var(--accent-emerald)}
+.derma-stat .val.highlight-red{color:var(--accent-rose)}
+
+/* ── Comparison Section ── */
+.comparison-section{margin-bottom:36px}
+.comp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.comp-card{background:var(--surface);border-radius:14px;padding:20px;border:1px solid var(--border);text-align:center}
+.comp-card .comp-metric{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;line-height:1.3}
+.comp-card .comp-values{display:flex;justify-content:center;gap:16px;margin-bottom:8px}
+.comp-card .comp-val{font-size:14px;font-weight:700;color:var(--text-primary)}
+.comp-card .comp-val small{display:block;font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px}
+.comp-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.comp-badge.up{background:#ecfdf5;color:#059669}
+.comp-badge.down{background:#fef2f2;color:#dc2626}
+.comp-badge.neutral{background:#f3f4f6;color:#6b7280}
+
+/* ── Hours Section ── */
+.hours-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:36px}
+.hour-card{background:var(--surface);border-radius:16px;padding:24px;border:1px solid var(--border);text-align:center}
+.hour-card .hour-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:8px}
+.hour-card .hour-value{font-size:30px;font-weight:800;line-height:1}
+.hour-card .hour-sub{font-size:11px;font-weight:500;color:var(--text-secondary);margin-top:5px}
+
+/* ── Footer ── */
+.footer{text-align:center;padding:24px;font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.5px}
+
+/* ── Error ── */
+.error-banner{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:20px 28px;border-radius:14px;margin-bottom:28px;font-size:13px;line-height:1.6}
+.error-banner strong{display:block;margin-bottom:4px;font-size:14px}
+
+@media(max-width:1100px){.kpi-strip{grid-template-columns:repeat(3,1fr)}.comp-cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.kpi-strip{grid-template-columns:repeat(2,1fr)}.chart-grid,.attendance-highlight,.derma-grid{grid-template-columns:1fr}.hours-grid{grid-template-columns:1fr}.header{padding:28px 24px}.container{padding:20px 16px 40px}}
+@media(max-width:500px){.kpi-strip{grid-template-columns:1fr}.comp-cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Carregando dados da planilha…</p>
+</div>
+
+<div id="app" style="opacity:0;transition:opacity .4s">
+
+<div class="header">
+  <h1>Dados — Reunião de Resultados</h1>
+  <p>Setor de Saúde · <span id="headerMonth">Fevereiro</span></p>
+</div>
+
+<div class="container">
+
+  <div id="error-banner" class="error-banner" style="display:none">
+    <strong>Erro ao carregar dados</strong>
+    <span id="error-msg"></span>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Interações Totais</div>
+      <div class="kpi-value" id="kpi-interacoes">—</div>
+      <div class="kpi-sub">Clínica · Gineco · Vet</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Consultas Realizadas</div>
+      <div class="kpi-value" id="kpi-consultas">—</div>
+      <div class="kpi-sub">Atendimentos concluídos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Vendas B2C</div>
+      <div class="kpi-value" id="kpi-b2c">—</div>
+      <div class="kpi-sub">4 canais ativos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Agendamentos</div>
+      <div class="kpi-value" id="kpi-agend">—</div>
+      <div class="kpi-sub" id="kpi-agend-sub">presença</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Impacto Financeiro</div>
+      <div class="kpi-value" id="kpi-impacto" style="font-size:22px">—</div>
+      <div class="kpi-sub" id="kpi-impacto-sub">Custo das faltas</div>
+    </div>
+  </div>
+
+  <!-- Horas -->
+  <div class="section-title">Horas Agendadas</div>
+  <div class="hours-grid">
+    <div class="hour-card">
+      <div class="hour-label">Hrs Agendadas</div>
+      <div class="hour-value" id="hrs-agend" style="color:var(--primary)">—</div>
+      <div class="hour-sub">Total do mês</div>
+    </div>
+    <div class="hour-card">
+      <div class="hour-label">Hrs Comparecidas</div>
+      <div class="hour-value green" id="hrs-comp">—</div>
+      <div class="hour-sub">Presença efetiva</div>
+    </div>
+    <div class="hour-card">
+      <div class="hour-label">Hrs Ausentes</div>
+      <div class="hour-value red" id="hrs-aus">—</div>
+      <div class="hour-sub" id="hrs-aus-sub">Impacto: —</div>
+    </div>
+  </div>
+
+  <!-- Interações -->
+  <div class="section-title">Interações por Área</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Distribuição de Interações</h3>
+      <div class="chart-subtitle" id="sub-inter-pie">Total de interações</div>
+      <div class="chart-wrapper pie-wrapper"><canvas id="interacoesPie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Interações — Barras</h3>
+      <div class="chart-subtitle">Comparativo por especialidade</div>
+      <div class="chart-wrapper bar-wrapper"><canvas id="interacoesBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Consultas -->
+  <div class="section-title">Consultas por Área</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Distribuição de Consultas</h3>
+      <div class="chart-subtitle" id="sub-cons-pie">Total de consultas</div>
+      <div class="chart-wrapper pie-wrapper"><canvas id="consultasPie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Consultas — Barras</h3>
+      <div class="chart-subtitle">Comparativo por especialidade</div>
+      <div class="chart-wrapper bar-wrapper"><canvas id="consultasBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Vendas B2C -->
+  <div class="section-title">Consultas B2C</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Distribuição de Consultas B2C</h3>
+      <div class="chart-subtitle" id="sub-b2c-pie">Total de vendas</div>
+      <div class="chart-wrapper pie-wrapper"><canvas id="vendasPie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Consultas B2C — Barras</h3>
+      <div class="chart-subtitle">Comparativo por canal</div>
+      <div class="chart-wrapper bar-wrapper"><canvas id="vendasBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Presença / Falta -->
+  <div class="section-title">Comparecimento em Agendamentos</div>
+  <div class="attendance-highlight">
+    <div class="att-card">
+      <div class="att-ring">
+        <canvas id="presencaRing"></canvas>
+        <div class="att-ring-label">
+          <div class="pct green" id="ring-pres-pct">—</div>
+          <div class="pct-label" style="color:var(--accent-emerald)">Presença</div>
+        </div>
+      </div>
+      <div class="att-info">
+        <h4 class="green">Compareceram</h4>
+        <p>Pacientes que compareceram aos agendamentos realizados</p>
+        <div class="att-number green" id="att-pres-num">—</div>
+      </div>
+    </div>
+    <div class="att-card">
+      <div class="att-ring">
+        <canvas id="faltaRing"></canvas>
+        <div class="att-ring-label">
+          <div class="pct red" id="ring-falta-pct">—</div>
+          <div class="pct-label" style="color:var(--accent-rose)">Falta</div>
+        </div>
+      </div>
+      <div class="att-info">
+        <h4 class="red">Faltaram</h4>
+        <p>Pacientes que não compareceram aos agendamentos realizados</p>
+        <div class="att-number red" id="att-falta-num">—</div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Presença × Falta</h3>
+      <div class="chart-subtitle" id="sub-pf-pie">Total de agendamentos</div>
+      <div class="chart-wrapper pie-wrapper"><canvas id="presencaPie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Presença × Falta — Barras</h3>
+      <div class="chart-subtitle">Visão comparativa</div>
+      <div class="chart-wrapper bar-wrapper"><canvas id="presencaBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Agendamentos por Área -->
+  <div class="section-title">Agendamentos por Área</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Distribuição de Agendamentos</h3>
+      <div class="chart-subtitle" id="sub-agend-pie">Total de agendamentos</div>
+      <div class="chart-wrapper pie-wrapper"><canvas id="agendPie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Agendamentos — Barras</h3>
+      <div class="chart-subtitle">Comparativo por área</div>
+      <div class="chart-wrapper bar-wrapper"><canvas id="agendBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Dermatologia Antes x Depois -->
+  <div class="section-title">Dermatologia — Antes × Depois</div>
+  <div class="derma-grid">
+    <div class="derma-card">
+      <h4 style="color:var(--accent-rose)">Antes</h4>
+      <div class="derma-stat"><span class="label">Agendamentos</span><span class="val" id="derma-antes-agend">—</span></div>
+      <div class="derma-stat"><span class="label">% Ociosidade</span><span class="val highlight-red" id="derma-antes-ocio">—</span></div>
+      <div class="derma-stat"><span class="label">Impacto R$</span><span class="val highlight-red" id="derma-antes-impacto">—</span></div>
+    </div>
+    <div class="derma-card">
+      <h4 style="color:var(--accent-emerald)">Depois</h4>
+      <div class="derma-stat"><span class="label">Agendamentos</span><span class="val" id="derma-depois-agend">—</span></div>
+      <div class="derma-stat"><span class="label">% Ociosidade</span><span class="val highlight-green" id="derma-depois-ocio">—</span></div>
+      <div class="derma-stat"><span class="label">Impacto R$</span><span class="val highlight-green" id="derma-depois-impacto">—</span></div>
+      <div class="derma-stat"><span class="label">Redução % R$</span><span class="val highlight-green" id="derma-reducao">—</span></div>
+      <div class="derma-stat"><span class="label">Proporção</span><span class="val highlight-green" id="derma-proporcao">—</span></div>
+    </div>
+  </div>
+  <div class="chart-grid" style="margin-bottom:36px">
+    <div class="chart-card">
+      <h3>Dermatologia — Agendamentos</h3>
+      <div class="chart-subtitle">Antes × Depois</div>
+      <div class="chart-wrapper bar-wrapper"><canvas id="dermaBarAgend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Dermatologia — Ociosidade</h3>
+      <div class="chart-subtitle">Antes × Depois</div>
+      <div class="chart-wrapper bar-wrapper"><canvas id="dermaBarOcio"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Comparação Mensal — Agendamentos -->
+  <div class="section-title">Comparação Mensal — Agendamentos</div>
+  <div class="comparison-section">
+    <div class="comp-cards" id="comp-agend-cards"></div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Agendamentos — Comparação Mensal</h3>
+        <div class="chart-subtitle">Janeiro × Fevereiro</div>
+        <div class="chart-wrapper bar-wrapper"><canvas id="compAgendBar"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Presença / Falta % — Comparação</h3>
+        <div class="chart-subtitle">Janeiro × Fevereiro</div>
+        <div class="chart-wrapper bar-wrapper"><canvas id="compAgendPctBar"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Comparação Mensal — Plantão</div>
+  <div class="comparison-section">
+    <div class="comp-cards" id="comp-plantao-cards"></div>
+    <div class="chart-grid">
+      <div class="chart-card full-width">
+        <h3>Consultas &amp; Interações — Comparação Mensal</h3>
+        <div class="chart-subtitle">Janeiro × Fevereiro</div>
+        <div class="chart-wrapper bar-wrapper"><canvas id="compPlantaoBar"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Comparação Mensal — B2C</div>
+  <div class="comparison-section">
+    <div class="comp-cards" id="comp-b2c-cards"></div>
+    <div class="chart-grid">
+      <div class="chart-card full-width">
+        <h3>Canais B2C — Comparação Mensal</h3>
+        <div class="chart-subtitle">Janeiro × Fevereiro</div>
+        <div class="chart-wrapper bar-wrapper"><canvas id="compB2cBar"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">Dashboard gerado automaticamente a partir de planilha Google Sheets</div>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CONFIGURAÇÃO
+   ══════════════════════════════════════════════════════ */
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1W8_XfHBeE8wbHeO2fMGf_oudOoURtT24y848KTpN-C8/edit';
+const SHEET_NAME = 'Análise';
+
+Chart.register(ChartDataLabels);
+const PALETTE = ['#4a1ea7','#7c4dff','#b83dba','#38bdf8','#f59e0b','#10b981','#f43f5e','#f97316'];
+const fontFamily = "'Montserrat', sans-serif";
+Chart.defaults.font.family = fontFamily;
+
+// ── Helpers ──
+function extractSheetId(url) {
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+function csvToRows(csv) {
+  const lines = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < csv.length; i++) {
+    const c = csv[i];
+    if (c === '"') {
+      if (inQ && i + 1 < csv.length && csv[i + 1] === '"') { cur += '"'; i++; continue; }
+      inQ = !inQ; continue;
+    }
+    if (c === '\r') continue;
+    if (c === '\n' && !inQ) { lines.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  if (cur) lines.push(cur);
+
+  return lines.map(line => {
+    const cols = [];
+    let cell = '';
+    let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (q && i + 1 < line.length && line[i + 1] === '"') { cell += '"'; i++; continue; }
+        q = !q; continue;
+      }
+      if (c === ',' && !q) { cols.push(cell); cell = ''; continue; }
+      cell += c;
+    }
+    cols.push(cell);
+    return cols;
+  });
+}
+
+function parseNum(s) {
+  if (s === undefined || s === null) return 0;
+  if (typeof s === 'number') return s;
+  s = String(s).trim();
+  if (!s || s === '-') return 0;
+  return parseFloat(s.replace(/R\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.')) || 0;
+}
+
+/* Parse percentage: handles both "57,46%" and decimal like "0.5746" */
+function parsePct(s) {
+  if (s === undefined || s === null) return 0;
+  s = String(s).trim();
+  if (!s || s === '-') return 0;
+  if (s.includes('%')) {
+    return parseFloat(s.replace('%','').replace(',','.').trim()) || 0;
+  }
+  // It's a decimal (0.5746) — convert to percentage
+  const v = parseFloat(s.replace(',','.'));
+  if (isNaN(v)) return 0;
+  // If value is <= 1, it's a decimal ratio → multiply by 100
+  if (Math.abs(v) <= 1.001) return v * 100;
+  return v;
+}
+
+function fmtNum(n) { return Math.round(n).toLocaleString('pt-BR'); }
+function fmtPct(n) { return n.toFixed(2).replace('.',',') + '%'; }
+function fmtBRL(n) { return 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function compBadge(jan, fev, isPercent) {
+  if (!jan || jan === 0) return '<span class="comp-badge neutral">—</span>';
+  const diff = isPercent ? (fev - jan) : ((fev - jan) / jan * 100);
+  const sign = diff > 0 ? '+' : '';
+  const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral';
+  return `<span class="comp-badge ${cls}">${sign}${diff.toFixed(1).replace('.',',')}%</span>`;
+}
+
+/* Find a row index by matching text in column 0 */
+function findRow(rows, text, startFrom) {
+  const t = text.toLowerCase();
+  for (let i = startFrom || 0; i < rows.length; i++) {
+    if (rows[i][0] && rows[i][0].trim().toLowerCase().includes(t)) return i;
+  }
+  return -1;
+}
+
+/* Find a row where ANY column matches text */
+function findRowAnyCo(rows, text, startFrom) {
+  const t = text.toLowerCase();
+  for (let i = startFrom || 0; i < rows.length; i++) {
+    for (let c = 0; c < rows[i].length; c++) {
+      if (rows[i][c] && rows[i][c].trim().toLowerCase().includes(t)) return i;
+    }
+  }
+  return -1;
+}
+
+/* Find column index in a row that matches text */
+function findCol(row, text) {
+  const t = text.toLowerCase();
+  for (let c = 0; c < row.length; c++) {
+    if (row[c] && row[c].trim().toLowerCase().includes(t)) return c;
+  }
+  return -1;
+}
+
+// ── Chart Configs ──
+function pieConfig(labels, data, colors) {
+  return {
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors||PALETTE.slice(0,labels.length),borderWidth:3,borderColor:'#fff',hoverBorderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',layout:{padding:10},
+      plugins:{
+        legend:{position:'bottom',labels:{padding:16,usePointStyle:true,pointStyleWidth:12,font:{size:12,weight:'600',family:fontFamily}}},
+        datalabels:{color:'#fff',font:{weight:'700',size:13,family:fontFamily},
+          formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return ((v/t)*100).toFixed(1)+'%'},
+          display:ctx=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return(ctx.dataset.data[ctx.dataIndex]/t)>.03}},
+        tooltip:{backgroundColor:'#1a1033',titleFont:{weight:'700',family:fontFamily},bodyFont:{family:fontFamily},cornerRadius:10,padding:12,
+          callbacks:{label:ctx=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return ` ${ctx.label}: ${ctx.raw.toLocaleString('pt-BR')} (${((ctx.raw/t)*100).toFixed(1)}%)`}}}
+      }
+    }
+  };
+}
+
+function barConfig(labels, data, colors, horizontal) {
+  return {
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:colors||labels.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:10,borderSkipped:false,maxBarThickness:64}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:horizontal?'y':'x',layout:{padding:{top:20}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11,weight:'600',family:fontFamily},color:'#5c4d73'},border:{display:false}},
+        y:{grid:{color:'#f0ebf7',drawTicks:false},ticks:{font:{size:11,weight:'500',family:fontFamily},color:'#9585ab',callback:v=>v.toLocaleString('pt-BR'),padding:8},border:{display:false},beginAtZero:true}
+      },
+      plugins:{legend:{display:false},
+        datalabels:{anchor:'end',align:'end',color:'#4a1ea7',font:{weight:'700',size:13,family:fontFamily},formatter:v=>v.toLocaleString('pt-BR'),offset:2},
+        tooltip:{backgroundColor:'#1a1033',titleFont:{weight:'700',family:fontFamily},bodyFont:{family:fontFamily},cornerRadius:10,padding:12,callbacks:{label:ctx=>` ${ctx.raw.toLocaleString('pt-BR')}`}}
+      }
+    }
+  };
+}
+
+function groupedBarConfig(labels, datasets, opts = {}) {
+  return {
+    type:'bar',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11,weight:'600',family:fontFamily},color:'#5c4d73'},border:{display:false}},
+        y:{grid:{color:'#f0ebf7',drawTicks:false},ticks:{font:{size:11,weight:'500',family:fontFamily},color:'#9585ab',callback:v=> opts.pct ? v+'%' : v.toLocaleString('pt-BR'),padding:8},border:{display:false},beginAtZero:true}
+      },
+      plugins:{
+        legend:{position:'top',labels:{padding:14,usePointStyle:true,pointStyleWidth:12,font:{size:12,weight:'600',family:fontFamily}}},
+        datalabels:{anchor:'end',align:'end',color:'#4a1ea7',font:{weight:'700',size:11,family:fontFamily},formatter:v=> opts.pct ? v.toFixed(1).replace('.',',')+('%') : v.toLocaleString('pt-BR'),offset:2},
+        tooltip:{backgroundColor:'#1a1033',titleFont:{weight:'700',family:fontFamily},bodyFont:{family:fontFamily},cornerRadius:10,padding:12}
+      }
+    }
+  };
+}
+
+function ringConfig(pct, color, bg) {
+  return {
+    type:'doughnut',
+    data:{datasets:[{data:[pct,100-pct],backgroundColor:[color,bg||'#f0ebf7'],borderWidth:0,hoverOffset:0}]},
+    options:{responsive:true,maintainAspectRatio:true,cutout:'78%',plugins:{legend:{display:false},tooltip:{enabled:false},datalabels:{display:false}},events:[]}
+  };
+}
+
+// ── Fetch & Render ──
+async function main() {
+  const id = extractSheetId(SHEET_URL);
+  if (!id) { showError('URL de planilha inválida.'); return; }
+
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  let csv;
+  try {
+    const res = await fetch(csvUrl);
+    if (!res.ok) throw new Error(res.status);
+    csv = await res.text();
+  } catch(e) {
+    showError(`Não foi possível acessar a planilha. Verifique se ela está compartilhada como "Qualquer pessoa com o link pode ver". (${e.message})`);
+    return;
+  }
+
+  const rows = csvToRows(csv);
+  console.log('=== RAW ROWS ===');
+  rows.forEach((r,i) => console.log(`Row ${i}:`, r));
+
+  try {
+    render(rows);
+  } catch(e) {
+    showError('Erro ao processar os dados: ' + e.message);
+    console.error(e);
+  }
+}
+
+function showError(msg) {
+  document.getElementById('loading-overlay').classList.add('hide');
+  document.getElementById('app').style.opacity = '1';
+  document.getElementById('error-banner').style.display = 'block';
+  document.getElementById('error-msg').textContent = msg;
+}
+
+function render(r) {
+  /*
+   * SPREADSHEET STRUCTURE (0-indexed CSV rows):
+   *
+   * Row 0:  "Agendamentos" (section label)
+   * Row 1:  FEVEREIRO | Agendamentos | Presença | Falta | % do total | % Presença | % Faltas | Hrs agendadas | Hrs comparecidas | Hrs ausentes | Impacto R$
+   * Row 2:  Total     | 5669         | 3694     | 1975  | ...        | 0.5746     | 0.4254   | 2564          | 1713             | 851          | 27751.67
+   * Row 3:  Dermatologia | 427 ...
+   * Row 4:  Nutrição | 929 ...
+   * Row 5:  Psicologia | 3862 ...
+   * Row 6:  Treinadores | 451 ...
+   * Row 7:  (empty)
+   * Row 8:  "Consultas (Plantão)" ... | col6: "Dermatologia: antes x depois"
+   * Row 9:  FEVEREIRO | Consultas MediQuo | Consultas B2C | Consultas Total | Interações | ... | col7: Agendamentos | col8: % de ociosidade | col9: Impacto R$ | col10: Redução % R$ | col11: Proporção
+   * Row 10: Total     | 8109              | 649           | 8758            | 9761       | ... | col6: ANTES | col7: 276 | col8: 0.5326 | col9: 2817.50 | col10: - | col11: -
+   * Row 11: Clínica   | 7317              | -             | -               | 9036       | ... | col6: DEPOIS | col7: 121 | col8: 0.2066 | col9: 191.67 | col10: 0.9320 | col11: 437.19
+   * Row 12: Ginecologia | 441 ...
+   * Row 13: Veterinária | 351 ...
+   * Row 14: (empty)
+   * Row 15: "Consultas (B2C)"
+   * Row 16: FEVEREIRO | Emagrecer | Araújo | Vero | Guia da Alma | Consultas Total
+   * Row 17: Consultas | 218       | 345    | 85   | 1            | 649
+   * Row 18: (empty)
+   * Row 19: "Dados mensais (Agendamentos)"
+   * Row 20: (header) | Agendamentos | Presença | Falta | % Presença | % Faltas | Hrs agendadas | ...
+   * Row 21: Janeiro   | 6261 | 4205 | 2046 | 0.6716 | 0.3268 ...
+   * Row 22: Fevereiro | 5669 | 3694 | 1975 | 0.5746 | 0.4254 ...
+   * ...
+   * Row 34: "Dados mensais (Plantão)"
+   * Row 35: (header) | Consultas MediQuo | Consultas B2C | Consultas Total | Interações
+   * Row 36: Janeiro   | 6952 | 723 | 7675 | 11086
+   * Row 37: Fevereiro | 8109 | 649 | 8758 | 9761
+   * ...
+   * Row 49: "Dados mensais (B2C)"
+   * Row 50: (header) | Emagrecer | Araújo | Vero | Guia da Alma | Consultas Total
+   * Row 51: Janeiro   | 244 | 390 | 85 | 4 | 723
+   * Row 52: Fevereiro | 218 | 345 | 85 | 1 | 649
+   */
+
+  // ═══════════════════════════════════════
+  // LOCATE SECTIONS dynamically using markers
+  // ═══════════════════════════════════════
+
+  // Table 1: Agendamentos
+  const agendSectionIdx = findRow(r, 'agendamentos', 0);
+  // Header is the next row with "FEVEREIRO" or column headers
+  const agendHdrIdx = agendSectionIdx + 1;
+  // Total is the next row
+  const agendTotalIdx = agendHdrIdx + 1;
+
+  // Identify column indices from header row
+  const ah = r[agendHdrIdx];
+  const COL_AG_AGEND = findCol(ah, 'agendamentos');
+  const COL_AG_PRES = findCol(ah, 'presença') >= 0 ? findCol(ah, 'presença') : findCol(ah, 'presen');
+  const COL_AG_FALTA = findCol(ah, 'falta');
+  const COL_AG_PCTTOT = findCol(ah, '% do total');
+  const COL_AG_PCTPRES = (() => {
+    // Find "% Presença" — but not "% do total" or "Presença" (without %)
+    for (let c = 0; c < ah.length; c++) {
+      const v = (ah[c]||'').trim().toLowerCase();
+      if ((v.includes('% pres') || v === '% presença') && !v.includes('total')) return c;
+    }
+    return -1;
+  })();
+  const COL_AG_PCTFALTA = findCol(ah, '% falta');
+  const COL_AG_HRSAG = findCol(ah, 'hrs agendadas');
+  const COL_AG_HRSC = findCol(ah, 'hrs comparecidas');
+  const COL_AG_HRSAU = findCol(ah, 'hrs ausentes');
+  const COL_AG_IMPACTO = findCol(ah, 'impacto');
+
+  console.log('AGEND cols:', {COL_AG_AGEND, COL_AG_PRES, COL_AG_FALTA, COL_AG_PCTPRES, COL_AG_PCTFALTA, COL_AG_HRSAG, COL_AG_HRSC, COL_AG_HRSAU, COL_AG_IMPACTO});
+
+  const totalRow = r[agendTotalIdx];
+  const agendTotal = {
+    agend: parseNum(totalRow[COL_AG_AGEND]),
+    pres: parseNum(totalRow[COL_AG_PRES]),
+    falta: parseNum(totalRow[COL_AG_FALTA]),
+    pctPres: parsePct(totalRow[COL_AG_PCTPRES]),
+    pctFalta: parsePct(totalRow[COL_AG_PCTFALTA]),
+    hrsAgend: parseNum(totalRow[COL_AG_HRSAG]),
+    hrsComp: parseNum(totalRow[COL_AG_HRSC]),
+    hrsAus: parseNum(totalRow[COL_AG_HRSAU]),
+    impacto: parseNum(totalRow[COL_AG_IMPACTO])
+  };
+  console.log('AGEND TOTAL:', agendTotal);
+
+  // Area rows: 4 rows after total (Dermatologia, Nutrição, Psicologia, Treinadores)
+  const agendAreas = [];
+  for (let i = agendTotalIdx + 1; i <= agendTotalIdx + 4; i++) {
+    if (!r[i] || !r[i][0] || !r[i][0].trim()) continue;
+    agendAreas.push({
+      name: r[i][0].trim(),
+      agend: parseNum(r[i][COL_AG_AGEND]),
+      pres: parseNum(r[i][COL_AG_PRES]),
+      falta: parseNum(r[i][COL_AG_FALTA]),
+      hrsAgend: parseNum(r[i][COL_AG_HRSAG]),
+      hrsComp: parseNum(r[i][COL_AG_HRSC]),
+      hrsAus: parseNum(r[i][COL_AG_HRSAU]),
+      impacto: parseNum(r[i][COL_AG_IMPACTO])
+    });
+  }
+  console.log('AGEND AREAS:', agendAreas);
+
+  // Table 2: Consultas (Plantão)
+  const plantSectionIdx = findRow(r, 'consultas (plant', 0);
+  const plantHdrIdx = plantSectionIdx + 1;
+  const ph = r[plantHdrIdx];
+  const COL_PL_MEDIQUO = findCol(ph, 'consultas mediquo') >= 0 ? findCol(ph, 'consultas mediquo') : findCol(ph, 'mediquo');
+  const COL_PL_B2C = findCol(ph, 'consultas b2c') >= 0 ? findCol(ph, 'consultas b2c') : findCol(ph, 'b2c');
+  const COL_PL_TOTAL = findCol(ph, 'consultas total') >= 0 ? findCol(ph, 'consultas total') : findCol(ph, 'total');
+  const COL_PL_INTER = findCol(ph, 'interaç') >= 0 ? findCol(ph, 'interaç') : findCol(ph, 'intera');
+
+  console.log('PLANT cols:', {COL_PL_MEDIQUO, COL_PL_B2C, COL_PL_TOTAL, COL_PL_INTER});
+
+  const plantTotalIdx = plantHdrIdx + 1;
+  const ptr = r[plantTotalIdx];
+  const consultaTotal = {
+    mediquo: parseNum(ptr[COL_PL_MEDIQUO]),
+    b2c: parseNum(ptr[COL_PL_B2C]),
+    total: parseNum(ptr[COL_PL_TOTAL]),
+    inter: parseNum(ptr[COL_PL_INTER])
+  };
+  console.log('CONSULTA TOTAL:', consultaTotal);
+
+  const consultaAreas = [];
+  for (let i = plantTotalIdx + 1; i <= plantTotalIdx + 3; i++) {
+    if (!r[i] || !r[i][0] || !r[i][0].trim()) continue;
+    consultaAreas.push({
+      name: r[i][0].trim(),
+      mediquo: parseNum(r[i][COL_PL_MEDIQUO]),
+      inter: parseNum(r[i][COL_PL_INTER])
+    });
+  }
+  console.log('CONSULTA AREAS:', consultaAreas);
+
+  // Table 4: Dermatologia antes x depois
+  // Located in columns 7-11 of the plantão section rows (10-11 in CSV)
+  // Header is in plantHdrIdx (row 9), data in rows 10 and 11
+  const dh = r[plantHdrIdx]; // same header row
+  // Derma columns start after column 5 (after Interações)
+  // Find "Agendamentos" header that's in col >= 6
+  let COL_DM_AGEND = -1, COL_DM_OCIO = -1, COL_DM_IMP = -1, COL_DM_RED = -1, COL_DM_PROP = -1;
+  for (let c = 5; c < dh.length; c++) {
+    const v = (dh[c]||'').trim().toLowerCase();
+    if (v.includes('agendamentos') && COL_DM_AGEND < 0) COL_DM_AGEND = c;
+    if (v.includes('ociosidade') && COL_DM_OCIO < 0) COL_DM_OCIO = c;
+    if (v.includes('impacto') && COL_DM_IMP < 0) COL_DM_IMP = c;
+    if (v.includes('redução') || v.includes('reducao') || v.includes('redu')) { if (COL_DM_RED < 0) COL_DM_RED = c; }
+    if (v.includes('proporção') || v.includes('proporcao') || v.includes('proporç')) { if (COL_DM_PROP < 0) COL_DM_PROP = c; }
+  }
+  console.log('DERMA cols:', {COL_DM_AGEND, COL_DM_OCIO, COL_DM_IMP, COL_DM_RED, COL_DM_PROP});
+
+  // ANTES row = plantTotalIdx (row 10), DEPOIS row = plantTotalIdx + 1 (row 11)
+  // But we need to verify: find which rows have "ANTES" and "DEPOIS"
+  let antesRowIdx = -1, depoisRowIdx = -1;
+  for (let i = plantSectionIdx; i < plantSectionIdx + 8; i++) {
+    if (!r[i]) continue;
+    const rowText = r[i].join('|').toLowerCase();
+    if (rowText.includes('antes') && antesRowIdx < 0) antesRowIdx = i;
+    if (rowText.includes('depois') && depoisRowIdx < 0) depoisRowIdx = i;
+  }
+  console.log('ANTES row:', antesRowIdx, 'DEPOIS row:', depoisRowIdx);
+
+  let dermaAntes = { agend: 0, ocio: 0, impacto: 0 };
+  let dermaDepois = { agend: 0, ocio: 0, impacto: 0, reducao: 0, proporcao: 0 };
+
+  if (antesRowIdx >= 0 && depoisRowIdx >= 0 && COL_DM_AGEND >= 0) {
+    dermaAntes = {
+      agend: parseNum(r[antesRowIdx][COL_DM_AGEND]),
+      ocio: parsePct(r[antesRowIdx][COL_DM_OCIO]),
+      impacto: parseNum(r[antesRowIdx][COL_DM_IMP])
+    };
+    dermaDepois = {
+      agend: parseNum(r[depoisRowIdx][COL_DM_AGEND]),
+      ocio: parsePct(r[depoisRowIdx][COL_DM_OCIO]),
+      impacto: parseNum(r[depoisRowIdx][COL_DM_IMP]),
+      reducao: parsePct(r[depoisRowIdx][COL_DM_RED]),
+      proporcao: parseNum(r[depoisRowIdx][COL_DM_PROP])
+    };
+  }
+  console.log('DERMA ANTES:', dermaAntes);
+  console.log('DERMA DEPOIS:', dermaDepois);
+
+  // Table 3: Consultas (B2C)
+  const b2cSectionIdx = findRow(r, 'consultas (b2c)', 0);
+  const b2cHdrIdx = b2cSectionIdx + 1;
+  const bh = r[b2cHdrIdx];
+  const COL_B_EMAGR = findCol(bh, 'emagrecer');
+  const COL_B_ARAUJO = findCol(bh, 'araújo') >= 0 ? findCol(bh, 'araújo') : findCol(bh, 'araujo');
+  const COL_B_VERO = findCol(bh, 'vero');
+  const COL_B_GUIA = findCol(bh, 'guia');
+  const COL_B_TOTAL = findCol(bh, 'consultas total') >= 0 ? findCol(bh, 'consultas total') : findCol(bh, 'total');
+  
+  console.log('B2C cols:', {COL_B_EMAGR, COL_B_ARAUJO, COL_B_VERO, COL_B_GUIA, COL_B_TOTAL});
+
+  const b2cDataIdx = b2cHdrIdx + 1;
+  const br = r[b2cDataIdx];
+  const b2c = {
+    emagrecer: parseNum(br[COL_B_EMAGR]),
+    araujo: parseNum(br[COL_B_ARAUJO]),
+    vero: parseNum(br[COL_B_VERO]),
+    guia: parseNum(br[COL_B_GUIA]),
+    total: parseNum(br[COL_B_TOTAL])
+  };
+  console.log('B2C:', b2c);
+
+  // Table 5: Dados mensais (Agendamentos)
+  const dmAgendIdx = findRow(r, 'dados mensais (agendamentos)', 0);
+  const dmAgendHdrIdx = dmAgendIdx + 1;
+  const dmah = r[dmAgendHdrIdx];
+  const COL_DMA_AGEND = findCol(dmah, 'agendamentos');
+  const COL_DMA_PRES = findCol(dmah, 'presença') >= 0 ? findCol(dmah, 'presença') : findCol(dmah, 'presen');
+  const COL_DMA_FALTA = findCol(dmah, 'falta');
+  const COL_DMA_PCTPRES = (() => {
+    for (let c = 0; c < dmah.length; c++) {
+      const v = (dmah[c]||'').trim().toLowerCase();
+      if ((v.includes('% pres') || v === '% presença') && !v.includes('total')) return c;
+    }
+    return -1;
+  })();
+  const COL_DMA_PCTFALTA = findCol(dmah, '% falta');
+
+  const janAgendIdx = findRow(r, 'janeiro', dmAgendHdrIdx + 1);
+  const fevAgendIdx = findRow(r, 'fevereiro', janAgendIdx + 1);
+
+  const jan_agend = {
+    agend: parseNum(r[janAgendIdx][COL_DMA_AGEND]),
+    pres: parseNum(r[janAgendIdx][COL_DMA_PRES]),
+    falta: parseNum(r[janAgendIdx][COL_DMA_FALTA]),
+    pctPres: parsePct(r[janAgendIdx][COL_DMA_PCTPRES]),
+    pctFalta: parsePct(r[janAgendIdx][COL_DMA_PCTFALTA])
+  };
+  const fev_agend = {
+    agend: parseNum(r[fevAgendIdx][COL_DMA_AGEND]),
+    pres: parseNum(r[fevAgendIdx][COL_DMA_PRES]),
+    falta: parseNum(r[fevAgendIdx][COL_DMA_FALTA]),
+    pctPres: parsePct(r[fevAgendIdx][COL_DMA_PCTPRES]),
+    pctFalta: parsePct(r[fevAgendIdx][COL_DMA_PCTFALTA])
+  };
+  console.log('JAN AGEND:', jan_agend, 'FEV AGEND:', fev_agend);
+
+  // Table 6: Dados mensais (Plantão)
+  const dmPlantIdx = findRow(r, 'dados mensais (plant', 0);
+  const dmPlantHdrIdx = dmPlantIdx + 1;
+  const dmph = r[dmPlantHdrIdx];
+  const COL_DMP_MEDIQUO = findCol(dmph, 'mediquo');
+  const COL_DMP_B2C = findCol(dmph, 'b2c');
+  const COL_DMP_TOTAL = findCol(dmph, 'consultas total') >= 0 ? findCol(dmph, 'consultas total') : findCol(dmph, 'total');
+  const COL_DMP_INTER = findCol(dmph, 'interaç') >= 0 ? findCol(dmph, 'interaç') : findCol(dmph, 'intera');
+
+  const janPlantIdx = findRow(r, 'janeiro', dmPlantHdrIdx + 1);
+  const fevPlantIdx = findRow(r, 'fevereiro', janPlantIdx + 1);
+
+  const jan_plant = {
+    mediquo: parseNum(r[janPlantIdx][COL_DMP_MEDIQUO]),
+    b2c: parseNum(r[janPlantIdx][COL_DMP_B2C]),
+    total: parseNum(r[janPlantIdx][COL_DMP_TOTAL]),
+    inter: parseNum(r[janPlantIdx][COL_DMP_INTER])
+  };
+  const fev_plant = {
+    mediquo: parseNum(r[fevPlantIdx][COL_DMP_MEDIQUO]),
+    b2c: parseNum(r[fevPlantIdx][COL_DMP_B2C]),
+    total: parseNum(r[fevPlantIdx][COL_DMP_TOTAL]),
+    inter: parseNum(r[fevPlantIdx][COL_DMP_INTER])
+  };
+  console.log('JAN PLANT:', jan_plant, 'FEV PLANT:', fev_plant);
+
+  // Table 7: Dados mensais (B2C)
+  const dmB2cIdx = findRow(r, 'dados mensais (b2c)', 0);
+  const dmB2cHdrIdx = dmB2cIdx + 1;
+  const dmbh = r[dmB2cHdrIdx];
+  const COL_DMB_EMAGR = findCol(dmbh, 'emagrecer');
+  const COL_DMB_ARAUJO = findCol(dmbh, 'araújo') >= 0 ? findCol(dmbh, 'araújo') : findCol(dmbh, 'araujo');
+  const COL_DMB_VERO = findCol(dmbh, 'vero');
+  const COL_DMB_GUIA = findCol(dmbh, 'guia');
+  const COL_DMB_TOTAL = findCol(dmbh, 'consultas total') >= 0 ? findCol(dmbh, 'consultas total') : findCol(dmbh, 'total');
+
+  const janB2cIdx = findRow(r, 'janeiro', dmB2cHdrIdx + 1);
+  const fevB2cIdx = findRow(r, 'fevereiro', janB2cIdx + 1);
+
+  const jan_b2c = {
+    emagrecer: parseNum(r[janB2cIdx][COL_DMB_EMAGR]),
+    araujo: parseNum(r[janB2cIdx][COL_DMB_ARAUJO]),
+    vero: parseNum(r[janB2cIdx][COL_DMB_VERO]),
+    guia: parseNum(r[janB2cIdx][COL_DMB_GUIA]),
+    total: parseNum(r[janB2cIdx][COL_DMB_TOTAL])
+  };
+  const fev_b2c = {
+    emagrecer: parseNum(r[fevB2cIdx][COL_DMB_EMAGR]),
+    araujo: parseNum(r[fevB2cIdx][COL_DMB_ARAUJO]),
+    vero: parseNum(r[fevB2cIdx][COL_DMB_VERO]),
+    guia: parseNum(r[fevB2cIdx][COL_DMB_GUIA]),
+    total: parseNum(r[fevB2cIdx][COL_DMB_TOTAL])
+  };
+  console.log('JAN B2C:', jan_b2c, 'FEV B2C:', fev_b2c);
+
+  // ══════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════
+
+  // KPIs
+  document.getElementById('kpi-interacoes').textContent = fmtNum(consultaTotal.inter);
+  document.getElementById('kpi-consultas').textContent = fmtNum(consultaTotal.total);
+  document.getElementById('kpi-b2c').textContent = fmtNum(b2c.total);
+  document.getElementById('kpi-agend').textContent = fmtNum(agendTotal.agend);
+  document.getElementById('kpi-agend-sub').textContent = fmtPct(agendTotal.pctPres) + ' de presença';
+  document.getElementById('kpi-impacto').textContent = fmtBRL(agendTotal.impacto);
+  document.getElementById('kpi-impacto-sub').textContent = 'Custo das faltas';
+
+  // Hours
+  document.getElementById('hrs-agend').textContent = fmtNum(agendTotal.hrsAgend);
+  document.getElementById('hrs-comp').textContent = fmtNum(agendTotal.hrsComp);
+  document.getElementById('hrs-aus').textContent = fmtNum(agendTotal.hrsAus);
+  document.getElementById('hrs-aus-sub').textContent = 'Impacto: ' + fmtBRL(agendTotal.impacto);
+
+  // Interações por Área
+  const interLabels = consultaAreas.map(a => a.name);
+  const interData = consultaAreas.map(a => a.inter);
+  document.getElementById('sub-inter-pie').textContent = 'Total: ' + fmtNum(consultaTotal.inter) + ' interações';
+  new Chart(document.getElementById('interacoesPie'), pieConfig(interLabels, interData, ['#4a1ea7','#b83dba','#38bdf8']));
+  new Chart(document.getElementById('interacoesBar'), barConfig(interLabels, interData, ['#4a1ea7','#b83dba','#38bdf8']));
+
+  // Consultas por Área
+  const consLabels = consultaAreas.map(a => a.name);
+  const consData = consultaAreas.map(a => a.mediquo);
+  document.getElementById('sub-cons-pie').textContent = 'Total: ' + fmtNum(consultaTotal.mediquo) + ' consultas MediQuo';
+  new Chart(document.getElementById('consultasPie'), pieConfig(consLabels, consData, ['#4a1ea7','#b83dba','#38bdf8']));
+  new Chart(document.getElementById('consultasBar'), barConfig(consLabels, consData, ['#4a1ea7','#b83dba','#38bdf8']));
+
+  // B2C
+  const b2cLabels = ['Emagrecer','Araújo','Vero','Guia da Alma'];
+  const b2cDataArr = [b2c.emagrecer, b2c.araujo, b2c.vero, b2c.guia];
+  document.getElementById('sub-b2c-pie').textContent = 'Total: ' + fmtNum(b2c.total) + ' consultas B2C';
+  new Chart(document.getElementById('vendasPie'), pieConfig(b2cLabels, b2cDataArr, ['#10b981','#4a1ea7','#b83dba','#f59e0b']));
+  new Chart(document.getElementById('vendasBar'), barConfig(b2cLabels, b2cDataArr, ['#10b981','#4a1ea7','#b83dba','#f59e0b']));
+
+  // Presença / Falta
+  document.getElementById('ring-pres-pct').textContent = fmtPct(agendTotal.pctPres);
+  document.getElementById('att-pres-num').textContent = fmtNum(agendTotal.pres);
+  document.getElementById('ring-falta-pct').textContent = fmtPct(agendTotal.pctFalta);
+  document.getElementById('att-falta-num').textContent = fmtNum(agendTotal.falta);
+  document.getElementById('sub-pf-pie').textContent = 'Total: ' + fmtNum(agendTotal.agend) + ' agendamentos';
+  new Chart(document.getElementById('presencaRing'), ringConfig(agendTotal.pctPres, '#10b981', '#e8f5f0'));
+  new Chart(document.getElementById('faltaRing'), ringConfig(agendTotal.pctFalta, '#f43f5e', '#fde8ec'));
+  new Chart(document.getElementById('presencaPie'), pieConfig(['Compareceu','Faltou'],[agendTotal.pres, agendTotal.falta],['#10b981','#f43f5e']));
+  new Chart(document.getElementById('presencaBar'), barConfig([`Compareceu (${fmtPct(agendTotal.pctPres)})`,`Faltou (${fmtPct(agendTotal.pctFalta)})`],[agendTotal.pres, agendTotal.falta],['#10b981','#f43f5e']));
+
+  // Agendamentos por Área (including Dermatologia)
+  const agLabels = agendAreas.map(a => a.name);
+  const agData = agendAreas.map(a => a.agend);
+  document.getElementById('sub-agend-pie').textContent = 'Total: ' + fmtNum(agendTotal.agend) + ' agendamentos';
+  new Chart(document.getElementById('agendPie'), pieConfig(agLabels, agData, ['#38bdf8','#b83dba','#4a1ea7','#7c4dff']));
+  new Chart(document.getElementById('agendBar'), barConfig(agLabels, agData, ['#38bdf8','#b83dba','#4a1ea7','#7c4dff']));
+
+  // Dermatologia antes x depois
+  document.getElementById('derma-antes-agend').textContent = fmtNum(dermaAntes.agend);
+  document.getElementById('derma-antes-ocio').textContent = fmtPct(dermaAntes.ocio);
+  document.getElementById('derma-antes-impacto').textContent = fmtBRL(dermaAntes.impacto);
+  document.getElementById('derma-depois-agend').textContent = fmtNum(dermaDepois.agend);
+  document.getElementById('derma-depois-ocio').textContent = fmtPct(dermaDepois.ocio);
+  document.getElementById('derma-depois-impacto').textContent = fmtBRL(dermaDepois.impacto);
+  document.getElementById('derma-reducao').textContent = fmtPct(dermaDepois.reducao);
+  document.getElementById('derma-proporcao').textContent = fmtBRL(dermaDepois.proporcao);
+
+  new Chart(document.getElementById('dermaBarAgend'), barConfig(['Antes','Depois'],[dermaAntes.agend, dermaDepois.agend],['#f43f5e','#10b981']));
+  new Chart(document.getElementById('dermaBarOcio'), barConfig(['Antes','Depois'],[dermaAntes.ocio, dermaDepois.ocio],['#f43f5e','#10b981']));
+
+  // ── Comparação Mensal: Agendamentos ──
+  const compAgendMetrics = [
+    {label:'Agendamentos', jan:jan_agend.agend, fev:fev_agend.agend},
+    {label:'Presença', jan:jan_agend.pres, fev:fev_agend.pres},
+    {label:'Falta', jan:jan_agend.falta, fev:fev_agend.falta},
+    {label:'% Presença', jan:jan_agend.pctPres, fev:fev_agend.pctPres, isPct:true},
+    {label:'% Faltas', jan:jan_agend.pctFalta, fev:fev_agend.pctFalta, isPct:true},
+  ];
+  renderCompCards('comp-agend-cards', compAgendMetrics);
+
+  new Chart(document.getElementById('compAgendBar'), groupedBarConfig(
+    ['Agendamentos','Presença','Falta'],
+    [
+      {label:'Janeiro',data:[jan_agend.agend,jan_agend.pres,jan_agend.falta],backgroundColor:'#7c4dff',borderRadius:8,maxBarThickness:48},
+      {label:'Fevereiro',data:[fev_agend.agend,fev_agend.pres,fev_agend.falta],backgroundColor:'#4a1ea7',borderRadius:8,maxBarThickness:48},
+    ]
+  ));
+
+  new Chart(document.getElementById('compAgendPctBar'), groupedBarConfig(
+    ['% Presença','% Faltas'],
+    [
+      {label:'Janeiro',data:[jan_agend.pctPres,jan_agend.pctFalta],backgroundColor:'#7c4dff',borderRadius:8,maxBarThickness:48},
+      {label:'Fevereiro',data:[fev_agend.pctPres,fev_agend.pctFalta],backgroundColor:'#4a1ea7',borderRadius:8,maxBarThickness:48},
+    ],
+    {pct:true}
+  ));
+
+  // ── Comparação Mensal: Plantão ──
+  const compPlantMetrics = [
+    {label:'Consultas MediQuo', jan:jan_plant.mediquo, fev:fev_plant.mediquo},
+    {label:'Consultas B2C', jan:jan_plant.b2c, fev:fev_plant.b2c},
+    {label:'Consultas Total', jan:jan_plant.total, fev:fev_plant.total},
+    {label:'Interações', jan:jan_plant.inter, fev:fev_plant.inter},
+  ];
+  renderCompCards('comp-plantao-cards', compPlantMetrics);
+
+  new Chart(document.getElementById('compPlantaoBar'), groupedBarConfig(
+    ['Consultas MediQuo','Consultas B2C','Consultas Total','Interações'],
+    [
+      {label:'Janeiro',data:[jan_plant.mediquo,jan_plant.b2c,jan_plant.total,jan_plant.inter],backgroundColor:'#7c4dff',borderRadius:8,maxBarThickness:48},
+      {label:'Fevereiro',data:[fev_plant.mediquo,fev_plant.b2c,fev_plant.total,fev_plant.inter],backgroundColor:'#4a1ea7',borderRadius:8,maxBarThickness:48},
+    ]
+  ));
+
+  // ── Comparação Mensal: B2C ──
+  const compB2cMetrics = [
+    {label:'Emagrecer', jan:jan_b2c.emagrecer, fev:fev_b2c.emagrecer},
+    {label:'Araújo', jan:jan_b2c.araujo, fev:fev_b2c.araujo},
+    {label:'Vero', jan:jan_b2c.vero, fev:fev_b2c.vero},
+    {label:'Guia da Alma', jan:jan_b2c.guia, fev:fev_b2c.guia},
+    {label:'Consultas Total B2C', jan:jan_b2c.total, fev:fev_b2c.total},
+  ];
+  renderCompCards('comp-b2c-cards', compB2cMetrics);
+
+  new Chart(document.getElementById('compB2cBar'), groupedBarConfig(
+    ['Emagrecer','Araújo','Vero','Guia da Alma','Total B2C'],
+    [
+      {label:'Janeiro',data:[jan_b2c.emagrecer,jan_b2c.araujo,jan_b2c.vero,jan_b2c.guia,jan_b2c.total],backgroundColor:'#7c4dff',borderRadius:8,maxBarThickness:48},
+      {label:'Fevereiro',data:[fev_b2c.emagrecer,fev_b2c.araujo,fev_b2c.vero,fev_b2c.guia,fev_b2c.total],backgroundColor:'#4a1ea7',borderRadius:8,maxBarThickness:48},
+    ]
+  ));
+
+  // Done
+  document.getElementById('loading-overlay').classList.add('hide');
+  document.getElementById('app').style.opacity = '1';
+}
+
+function renderCompCards(containerId, metrics) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = metrics.map(m => {
+    const janDisplay = m.isPct ? fmtPct(m.jan) : fmtNum(m.jan);
+    const fevDisplay = m.isPct ? fmtPct(m.fev) : fmtNum(m.fev);
+    const badge = compBadge(m.jan, m.fev, m.isPct);
+    return `<div class="comp-card">
+      <div class="comp-metric">${m.label}</div>
+      <div class="comp-values">
+        <div class="comp-val"><small>Jan</small>${janDisplay}</div>
+        <div class="comp-val"><small>Fev</small>${fevDisplay}</div>
+      </div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+main();
+</script>
+</body>
+</html>
