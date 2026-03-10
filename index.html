@@ -32,6 +32,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
 .header::before{content:'';position:absolute;top:-60%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,.06) 0%,transparent 70%);border-radius:50%}
 .header::after{content:'';position:absolute;bottom:-40%;left:20%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,255,255,.04) 0%,transparent 70%);border-radius:50%}
 .header h1{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.5px;position:relative;z-index:1}
+.header h1 img{height:42px;width:42px;border-radius:10px;vertical-align:middle;margin-right:12px;object-fit:cover}
 .header p{font-size:14px;font-weight:400;color:rgba(255,255,255,.65);margin-top:6px;position:relative;z-index:1}
 
 /* ── Container ── */
@@ -119,6 +120,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
 </head>
 <body>
 
+<!-- Loading Overlay -->
 <div id="loading-overlay">
   <div class="spinner"></div>
   <p>Carregando dados da planilha…</p>
@@ -133,6 +135,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
 
 <div class="container">
 
+  <!-- Error banner (hidden by default) -->
   <div id="error-banner" class="error-banner" style="display:none">
     <strong>Erro ao carregar dados</strong>
     <span id="error-msg"></span>
@@ -153,7 +156,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     <div class="kpi-card">
       <div class="kpi-label">Vendas B2C</div>
       <div class="kpi-value" id="kpi-b2c">—</div>
-      <div class="kpi-sub">4 canais ativos</div>
+      <div class="kpi-sub" id="kpi-b2c-sub">canais ativos</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Agendamentos</div>
@@ -163,11 +166,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     <div class="kpi-card">
       <div class="kpi-label">Impacto Financeiro</div>
       <div class="kpi-value" id="kpi-impacto" style="font-size:22px">—</div>
-      <div class="kpi-sub" id="kpi-impacto-sub">Custo das faltas</div>
+      <div class="kpi-sub">Horas ausentes</div>
     </div>
   </div>
 
-  <!-- Horas -->
+  <!-- SECTION: Horas -->
   <div class="section-title">Horas Agendadas</div>
   <div class="hours-grid">
     <div class="hour-card">
@@ -187,7 +190,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     </div>
   </div>
 
-  <!-- Interações -->
+  <!-- SECTION: Interações -->
   <div class="section-title">Interações por Área</div>
   <div class="chart-grid">
     <div class="chart-card">
@@ -202,7 +205,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     </div>
   </div>
 
-  <!-- Consultas -->
+  <!-- SECTION: Consultas -->
   <div class="section-title">Consultas por Área</div>
   <div class="chart-grid">
     <div class="chart-card">
@@ -217,7 +220,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     </div>
   </div>
 
-  <!-- Vendas B2C -->
+  <!-- SECTION: Vendas B2C -->
   <div class="section-title">Consultas B2C</div>
   <div class="chart-grid">
     <div class="chart-card">
@@ -232,7 +235,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     </div>
   </div>
 
-  <!-- Presença / Falta -->
+  <!-- SECTION: Presença / Falta -->
   <div class="section-title">Comparecimento em Agendamentos</div>
   <div class="attendance-highlight">
     <div class="att-card">
@@ -277,7 +280,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     </div>
   </div>
 
-  <!-- Agendamentos por Área -->
+  <!-- SECTION: Agendamentos por Área -->
   <div class="section-title">Agendamentos por Área</div>
   <div class="chart-grid">
     <div class="chart-card">
@@ -292,7 +295,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     </div>
   </div>
 
-  <!-- Dermatologia Antes x Depois -->
+  <!-- SECTION: Dermatologia Antes x Depois -->
   <div class="section-title">Dermatologia — Antes × Depois</div>
   <div class="derma-grid">
     <div class="derma-card">
@@ -323,7 +326,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
     </div>
   </div>
 
-  <!-- Comparação Mensal — Agendamentos -->
+  <!-- SECTION: Comparação Mensal -->
   <div class="section-title">Comparação Mensal — Agendamentos</div>
   <div class="comparison-section">
     <div class="comp-cards" id="comp-agend-cards"></div>
@@ -369,14 +372,15 @@ body{font-family:'Montserrat',sans-serif;background:var(--surface-alt);color:var
 
 <div class="footer">Dashboard gerado automaticamente a partir de planilha Google Sheets</div>
 
-</div>
+</div><!-- /app -->
 
 <script>
 /* ══════════════════════════════════════════════════════
-   CONFIGURAÇÃO
+   CONFIGURAÇÃO — Cole aqui a URL da planilha Google
    ══════════════════════════════════════════════════════ */
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1W8_XfHBeE8wbHeO2fMGf_oudOoURtT24y848KTpN-C8/edit';
 const SHEET_NAME = 'Análise';
+/* ══════════════════════════════════════════════════════ */
 
 Chart.register(ChartDataLabels);
 const PALETTE = ['#4a1ea7','#7c4dff','#b83dba','#38bdf8','#f59e0b','#10b981','#f43f5e','#f97316'];
@@ -390,64 +394,41 @@ function extractSheetId(url) {
 }
 
 function csvToRows(csv) {
-  const lines = [];
-  let cur = '';
-  let inQ = false;
+  const rows = [];
+  let current = '';
+  let inQuotes = false;
   for (let i = 0; i < csv.length; i++) {
-    const c = csv[i];
-    if (c === '"') {
-      if (inQ && i + 1 < csv.length && csv[i + 1] === '"') { cur += '"'; i++; continue; }
-      inQ = !inQ; continue;
-    }
-    if (c === '\r') continue;
-    if (c === '\n' && !inQ) { lines.push(cur); cur = ''; continue; }
-    cur += c;
+    const ch = csv[i];
+    if (ch === '"') { inQuotes = !inQuotes; continue; }
+    if (ch === '\n' && !inQuotes) { rows.push(current); current = ''; continue; }
+    if (ch === '\r' && !inQuotes) continue;
+    current += ch;
   }
-  if (cur) lines.push(cur);
-
-  return lines.map(line => {
+  if (current) rows.push(current);
+  return rows.map(r => {
     const cols = [];
     let cell = '';
     let q = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') {
-        if (q && i + 1 < line.length && line[i + 1] === '"') { cell += '"'; i++; continue; }
-        q = !q; continue;
-      }
-      if (c === ',' && !q) { cols.push(cell); cell = ''; continue; }
+    for (let i = 0; i < r.length; i++) {
+      const c = r[i];
+      if (c === '"') { q = !q; continue; }
+      if (c === ',' && !q) { cols.push(cell.trim()); cell = ''; continue; }
       cell += c;
     }
-    cols.push(cell);
+    cols.push(cell.trim());
     return cols;
   });
 }
 
 function parseNum(s) {
-  if (s === undefined || s === null) return 0;
-  if (typeof s === 'number') return s;
-  s = String(s).trim();
-  if (!s || s === '-') return 0;
-  return parseFloat(s.replace(/R\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.')) || 0;
+  if (!s || s === '-' || s === '') return 0;
+  return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0;
 }
-
-/* Parse percentage: handles both "57,46%" and decimal like "0.5746" */
 function parsePct(s) {
-  if (s === undefined || s === null) return 0;
-  s = String(s).trim();
-  if (!s || s === '-') return 0;
-  if (s.includes('%')) {
-    return parseFloat(s.replace('%','').replace(',','.').trim()) || 0;
-  }
-  // It's a decimal (0.5746) — convert to percentage
-  const v = parseFloat(s.replace(',','.'));
-  if (isNaN(v)) return 0;
-  // If value is <= 1, it's a decimal ratio → multiply by 100
-  if (Math.abs(v) <= 1.001) return v * 100;
-  return v;
+  if (!s || s === '-' || s === '') return 0;
+  return parseFloat(s.replace('%','').replace(',','.')) || 0;
 }
-
-function fmtNum(n) { return Math.round(n).toLocaleString('pt-BR'); }
+function fmtNum(n) { return n.toLocaleString('pt-BR'); }
 function fmtPct(n) { return n.toFixed(2).replace('.',',') + '%'; }
 function fmtBRL(n) { return 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
@@ -457,35 +438,6 @@ function compBadge(jan, fev, isPercent) {
   const sign = diff > 0 ? '+' : '';
   const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral';
   return `<span class="comp-badge ${cls}">${sign}${diff.toFixed(1).replace('.',',')}%</span>`;
-}
-
-/* Find a row index by matching text in column 0 */
-function findRow(rows, text, startFrom) {
-  const t = text.toLowerCase();
-  for (let i = startFrom || 0; i < rows.length; i++) {
-    if (rows[i][0] && rows[i][0].trim().toLowerCase().includes(t)) return i;
-  }
-  return -1;
-}
-
-/* Find a row where ANY column matches text */
-function findRowAnyCo(rows, text, startFrom) {
-  const t = text.toLowerCase();
-  for (let i = startFrom || 0; i < rows.length; i++) {
-    for (let c = 0; c < rows[i].length; c++) {
-      if (rows[i][c] && rows[i][c].trim().toLowerCase().includes(t)) return i;
-    }
-  }
-  return -1;
-}
-
-/* Find column index in a row that matches text */
-function findCol(row, text) {
-  const t = text.toLowerCase();
-  for (let c = 0; c < row.length; c++) {
-    if (row[c] && row[c].trim().toLowerCase().includes(t)) return c;
-  }
-  return -1;
 }
 
 // ── Chart Configs ──
@@ -566,9 +518,6 @@ async function main() {
   }
 
   const rows = csvToRows(csv);
-  console.log('=== RAW ROWS ===');
-  rows.forEach((r,i) => console.log(`Row ${i}:`, r));
-
   try {
     render(rows);
   } catch(e) {
@@ -584,314 +533,71 @@ function showError(msg) {
   document.getElementById('error-msg').textContent = msg;
 }
 
-function render(r) {
-  /*
-   * SPREADSHEET STRUCTURE (0-indexed CSV rows):
-   *
-   * Row 0:  "Agendamentos" (section label)
-   * Row 1:  FEVEREIRO | Agendamentos | Presença | Falta | % do total | % Presença | % Faltas | Hrs agendadas | Hrs comparecidas | Hrs ausentes | Impacto R$
-   * Row 2:  Total     | 5669         | 3694     | 1975  | ...        | 0.5746     | 0.4254   | 2564          | 1713             | 851          | 27751.67
-   * Row 3:  Dermatologia | 427 ...
-   * Row 4:  Nutrição | 929 ...
-   * Row 5:  Psicologia | 3862 ...
-   * Row 6:  Treinadores | 451 ...
-   * Row 7:  (empty)
-   * Row 8:  "Consultas (Plantão)" ... | col6: "Dermatologia: antes x depois"
-   * Row 9:  FEVEREIRO | Consultas MediQuo | Consultas B2C | Consultas Total | Interações | ... | col7: Agendamentos | col8: % de ociosidade | col9: Impacto R$ | col10: Redução % R$ | col11: Proporção
-   * Row 10: Total     | 8109              | 649           | 8758            | 9761       | ... | col6: ANTES | col7: 276 | col8: 0.5326 | col9: 2817.50 | col10: - | col11: -
-   * Row 11: Clínica   | 7317              | -             | -               | 9036       | ... | col6: DEPOIS | col7: 121 | col8: 0.2066 | col9: 191.67 | col10: 0.9320 | col11: 437.19
-   * Row 12: Ginecologia | 441 ...
-   * Row 13: Veterinária | 351 ...
-   * Row 14: (empty)
-   * Row 15: "Consultas (B2C)"
-   * Row 16: FEVEREIRO | Emagrecer | Araújo | Vero | Guia da Alma | Consultas Total
-   * Row 17: Consultas | 218       | 345    | 85   | 1            | 649
-   * Row 18: (empty)
-   * Row 19: "Dados mensais (Agendamentos)"
-   * Row 20: (header) | Agendamentos | Presença | Falta | % Presença | % Faltas | Hrs agendadas | ...
-   * Row 21: Janeiro   | 6261 | 4205 | 2046 | 0.6716 | 0.3268 ...
-   * Row 22: Fevereiro | 5669 | 3694 | 1975 | 0.5746 | 0.4254 ...
-   * ...
-   * Row 34: "Dados mensais (Plantão)"
-   * Row 35: (header) | Consultas MediQuo | Consultas B2C | Consultas Total | Interações
-   * Row 36: Janeiro   | 6952 | 723 | 7675 | 11086
-   * Row 37: Fevereiro | 8109 | 649 | 8758 | 9761
-   * ...
-   * Row 49: "Dados mensais (B2C)"
-   * Row 50: (header) | Emagrecer | Araújo | Vero | Guia da Alma | Consultas Total
-   * Row 51: Janeiro   | 244 | 390 | 85 | 4 | 723
-   * Row 52: Fevereiro | 218 | 345 | 85 | 1 | 649
-   */
+function findRow(rows, col0, startFrom) {
+  for (let i = startFrom || 0; i < rows.length; i++) {
+    if (rows[i][0] && rows[i][0].toLowerCase().includes(col0.toLowerCase())) return i;
+  }
+  return -1;
+}
 
-  // ═══════════════════════════════════════
-  // LOCATE SECTIONS dynamically using markers
-  // ═══════════════════════════════════════
-
-  // Table 1: Agendamentos
-  const agendSectionIdx = findRow(r, 'agendamentos', 0);
-  // Header is the next row with "FEVEREIRO" or column headers
-  const agendHdrIdx = agendSectionIdx + 1;
-  // Total is the next row
-  const agendTotalIdx = agendHdrIdx + 1;
-
-  // Identify column indices from header row
-  const ah = r[agendHdrIdx];
-  const COL_AG_AGEND = findCol(ah, 'agendamentos');
-  const COL_AG_PRES = findCol(ah, 'presença') >= 0 ? findCol(ah, 'presença') : findCol(ah, 'presen');
-  const COL_AG_FALTA = findCol(ah, 'falta');
-  const COL_AG_PCTTOT = findCol(ah, '% do total');
-  const COL_AG_PCTPRES = (() => {
-    // Find "% Presença" — but not "% do total" or "Presença" (without %)
-    for (let c = 0; c < ah.length; c++) {
-      const v = (ah[c]||'').trim().toLowerCase();
-      if ((v.includes('% pres') || v === '% presença') && !v.includes('total')) return c;
-    }
-    return -1;
-  })();
-  const COL_AG_PCTFALTA = findCol(ah, '% falta');
-  const COL_AG_HRSAG = findCol(ah, 'hrs agendadas');
-  const COL_AG_HRSC = findCol(ah, 'hrs comparecidas');
-  const COL_AG_HRSAU = findCol(ah, 'hrs ausentes');
-  const COL_AG_IMPACTO = findCol(ah, 'impacto');
-
-  console.log('AGEND cols:', {COL_AG_AGEND, COL_AG_PRES, COL_AG_FALTA, COL_AG_PCTPRES, COL_AG_PCTFALTA, COL_AG_HRSAG, COL_AG_HRSC, COL_AG_HRSAU, COL_AG_IMPACTO});
-
-  const totalRow = r[agendTotalIdx];
-  const agendTotal = {
-    agend: parseNum(totalRow[COL_AG_AGEND]),
-    pres: parseNum(totalRow[COL_AG_PRES]),
-    falta: parseNum(totalRow[COL_AG_FALTA]),
-    pctPres: parsePct(totalRow[COL_AG_PCTPRES]),
-    pctFalta: parsePct(totalRow[COL_AG_PCTFALTA]),
-    hrsAgend: parseNum(totalRow[COL_AG_HRSAG]),
-    hrsComp: parseNum(totalRow[COL_AG_HRSC]),
-    hrsAus: parseNum(totalRow[COL_AG_HRSAU]),
-    impacto: parseNum(totalRow[COL_AG_IMPACTO])
-  };
-  console.log('AGEND TOTAL:', agendTotal);
-
-  // Area rows: 4 rows after total (Dermatologia, Nutrição, Psicologia, Treinadores)
+function render(rows) {
+  // ── Parse Table 1: Agendamentos (rows 2-7 → indices 2-6) ──
+  // Row 0 = "Agendamentos", Row 1 = headers, Row 2 = Total ...
+  const r = rows;
+  const agendTotal = { agend: parseNum(r[2][1]), pres: parseNum(r[2][2]), falta: parseNum(r[2][3]), pctPres: parsePct(r[2][5]), pctFalta: parsePct(r[2][6]), hrsAgend: parseNum(r[2][7]), hrsComp: parseNum(r[2][8]), hrsAus: parseNum(r[2][9]), impacto: parseNum(r[2][10]) };
+  const areas = ['Dermatologia','Nutrição','Psicologia','Treinadores'];
   const agendAreas = [];
-  for (let i = agendTotalIdx + 1; i <= agendTotalIdx + 4; i++) {
-    if (!r[i] || !r[i][0] || !r[i][0].trim()) continue;
-    agendAreas.push({
-      name: r[i][0].trim(),
-      agend: parseNum(r[i][COL_AG_AGEND]),
-      pres: parseNum(r[i][COL_AG_PRES]),
-      falta: parseNum(r[i][COL_AG_FALTA]),
-      hrsAgend: parseNum(r[i][COL_AG_HRSAG]),
-      hrsComp: parseNum(r[i][COL_AG_HRSC]),
-      hrsAus: parseNum(r[i][COL_AG_HRSAU]),
-      impacto: parseNum(r[i][COL_AG_IMPACTO])
-    });
+  for (let i = 3; i <= 6; i++) {
+    agendAreas.push({ name: r[i][0], agend: parseNum(r[i][1]), pres: parseNum(r[i][2]), falta: parseNum(r[i][3]), hrsAgend: parseNum(r[i][7]), hrsComp: parseNum(r[i][8]), hrsAus: parseNum(r[i][9]), impacto: parseNum(r[i][10]) });
   }
-  console.log('AGEND AREAS:', agendAreas);
 
-  // Table 2: Consultas (Plantão)
-  const plantSectionIdx = findRow(r, 'consultas (plant', 0);
-  const plantHdrIdx = plantSectionIdx + 1;
-  const ph = r[plantHdrIdx];
-  const COL_PL_MEDIQUO = findCol(ph, 'consultas mediquo') >= 0 ? findCol(ph, 'consultas mediquo') : findCol(ph, 'mediquo');
-  const COL_PL_B2C = findCol(ph, 'consultas b2c') >= 0 ? findCol(ph, 'consultas b2c') : findCol(ph, 'b2c');
-  const COL_PL_TOTAL = findCol(ph, 'consultas total') >= 0 ? findCol(ph, 'consultas total') : findCol(ph, 'total');
-  const COL_PL_INTER = findCol(ph, 'interaç') >= 0 ? findCol(ph, 'interaç') : findCol(ph, 'intera');
-
-  console.log('PLANT cols:', {COL_PL_MEDIQUO, COL_PL_B2C, COL_PL_TOTAL, COL_PL_INTER});
-
-  const plantTotalIdx = plantHdrIdx + 1;
-  const ptr = r[plantTotalIdx];
-  const consultaTotal = {
-    mediquo: parseNum(ptr[COL_PL_MEDIQUO]),
-    b2c: parseNum(ptr[COL_PL_B2C]),
-    total: parseNum(ptr[COL_PL_TOTAL]),
-    inter: parseNum(ptr[COL_PL_INTER])
-  };
-  console.log('CONSULTA TOTAL:', consultaTotal);
-
+  // ── Parse Table 2: Consultas Plantão (row 9=header section, row 10=cols, 11-14=data) ──
+  const plantaoIdx = findRow(r, 'Consultas (Plant', 0);
+  const piOff = plantaoIdx + 1; // header row
+  const consultaTotal = { mediquo: parseNum(r[piOff+1][1]), b2c: parseNum(r[piOff+1][2]), total: parseNum(r[piOff+1][3]), inter: parseNum(r[piOff+1][4]) };
   const consultaAreas = [];
-  for (let i = plantTotalIdx + 1; i <= plantTotalIdx + 3; i++) {
-    if (!r[i] || !r[i][0] || !r[i][0].trim()) continue;
-    consultaAreas.push({
-      name: r[i][0].trim(),
-      mediquo: parseNum(r[i][COL_PL_MEDIQUO]),
-      inter: parseNum(r[i][COL_PL_INTER])
-    });
+  for (let i = piOff+2; i <= piOff+4; i++) {
+    consultaAreas.push({ name: r[i][0], mediquo: parseNum(r[i][1]), inter: parseNum(r[i][4]) });
   }
-  console.log('CONSULTA AREAS:', consultaAreas);
 
-  // Table 4: Dermatologia antes x depois
-  // Located in columns 7-11 of the plantão section rows (10-11 in CSV)
-  // Header is in plantHdrIdx (row 9), data in rows 10 and 11
-  const dh = r[plantHdrIdx]; // same header row
-  // Derma columns start after column 5 (after Interações)
-  // Find "Agendamentos" header that's in col >= 6
-  let COL_DM_AGEND = -1, COL_DM_OCIO = -1, COL_DM_IMP = -1, COL_DM_RED = -1, COL_DM_PROP = -1;
-  for (let c = 5; c < dh.length; c++) {
-    const v = (dh[c]||'').trim().toLowerCase();
-    if (v.includes('agendamentos') && COL_DM_AGEND < 0) COL_DM_AGEND = c;
-    if (v.includes('ociosidade') && COL_DM_OCIO < 0) COL_DM_OCIO = c;
-    if (v.includes('impacto') && COL_DM_IMP < 0) COL_DM_IMP = c;
-    if (v.includes('redução') || v.includes('reducao') || v.includes('redu')) { if (COL_DM_RED < 0) COL_DM_RED = c; }
-    if (v.includes('proporção') || v.includes('proporcao') || v.includes('proporç')) { if (COL_DM_PROP < 0) COL_DM_PROP = c; }
-  }
-  console.log('DERMA cols:', {COL_DM_AGEND, COL_DM_OCIO, COL_DM_IMP, COL_DM_RED, COL_DM_PROP});
+  // ── Parse Dermatologia antes x depois (same row block) ──
+  // Antes = row piOff+1 col 7-11, Depois = row piOff+2 col 7-11
+  const dermaAntes = { agend: parseNum(r[piOff+1][7]), ocio: r[piOff+1][8] || '-', impacto: r[piOff+1][9] || '-' };
+  const dermaDepois = { agend: parseNum(r[piOff+2][7]), ocio: r[piOff+2][8] || '-', impacto: r[piOff+2][9] || '-', reducao: r[piOff+2][10] || '-', proporcao: r[piOff+2][11] || '-' };
 
-  // ANTES row = plantTotalIdx (row 10), DEPOIS row = plantTotalIdx + 1 (row 11)
-  // But we need to verify: find which rows have "ANTES" and "DEPOIS"
-  let antesRowIdx = -1, depoisRowIdx = -1;
-  for (let i = plantSectionIdx; i < plantSectionIdx + 8; i++) {
-    if (!r[i]) continue;
-    const rowText = r[i].join('|').toLowerCase();
-    if (rowText.includes('antes') && antesRowIdx < 0) antesRowIdx = i;
-    if (rowText.includes('depois') && depoisRowIdx < 0) depoisRowIdx = i;
-  }
-  console.log('ANTES row:', antesRowIdx, 'DEPOIS row:', depoisRowIdx);
+  // ── Parse Table 3: B2C (row 16=section, 17=header, 18=data) ──
+  const b2cIdx = findRow(r, 'Consultas (B2C)', 0);
+  const b2cRow = b2cIdx + 2;
+  const b2c = { emagrecer: parseNum(r[b2cRow][1]), araujo: parseNum(r[b2cRow][2]), vero: parseNum(r[b2cRow][3]), guia: parseNum(r[b2cRow][4]), total: parseNum(r[b2cRow][5]) };
 
-  let dermaAntes = { agend: 0, ocio: 0, impacto: 0 };
-  let dermaDepois = { agend: 0, ocio: 0, impacto: 0, reducao: 0, proporcao: 0 };
+  // ── Parse Table 5: Dados mensais Agendamentos ──
+  const dmAgendIdx = findRow(r, 'Dados mensais (Agendamentos)', 0);
+  const dmAH = dmAgendIdx + 1; // header
+  const jan_agend = { agend: parseNum(r[dmAH+1][1]), pres: parseNum(r[dmAH+1][2]), falta: parseNum(r[dmAH+1][3]), pctPres: parsePct(r[dmAH+1][4]), pctFalta: parsePct(r[dmAH+1][5]) };
+  const fev_agend = { agend: parseNum(r[dmAH+2][1]), pres: parseNum(r[dmAH+2][2]), falta: parseNum(r[dmAH+2][3]), pctPres: parsePct(r[dmAH+2][4]), pctFalta: parsePct(r[dmAH+2][5]) };
 
-  if (antesRowIdx >= 0 && depoisRowIdx >= 0 && COL_DM_AGEND >= 0) {
-    dermaAntes = {
-      agend: parseNum(r[antesRowIdx][COL_DM_AGEND]),
-      ocio: parsePct(r[antesRowIdx][COL_DM_OCIO]),
-      impacto: parseNum(r[antesRowIdx][COL_DM_IMP])
-    };
-    dermaDepois = {
-      agend: parseNum(r[depoisRowIdx][COL_DM_AGEND]),
-      ocio: parsePct(r[depoisRowIdx][COL_DM_OCIO]),
-      impacto: parseNum(r[depoisRowIdx][COL_DM_IMP]),
-      reducao: parsePct(r[depoisRowIdx][COL_DM_RED]),
-      proporcao: parseNum(r[depoisRowIdx][COL_DM_PROP])
-    };
-  }
-  console.log('DERMA ANTES:', dermaAntes);
-  console.log('DERMA DEPOIS:', dermaDepois);
+  // ── Parse Table 6: Dados mensais Plantão ──
+  const dmPlantIdx = findRow(r, 'Dados mensais (Plant', 0);
+  const dmPH = dmPlantIdx + 1;
+  const jan_plant = { mediquo: parseNum(r[dmPH+1][1]), b2c: parseNum(r[dmPH+1][2]), total: parseNum(r[dmPH+1][3]), inter: parseNum(r[dmPH+1][4]) };
+  const fev_plant = { mediquo: parseNum(r[dmPH+2][1]), b2c: parseNum(r[dmPH+2][2]), total: parseNum(r[dmPH+2][3]), inter: parseNum(r[dmPH+2][4]) };
 
-  // Table 3: Consultas (B2C)
-  const b2cSectionIdx = findRow(r, 'consultas (b2c)', 0);
-  const b2cHdrIdx = b2cSectionIdx + 1;
-  const bh = r[b2cHdrIdx];
-  const COL_B_EMAGR = findCol(bh, 'emagrecer');
-  const COL_B_ARAUJO = findCol(bh, 'araújo') >= 0 ? findCol(bh, 'araújo') : findCol(bh, 'araujo');
-  const COL_B_VERO = findCol(bh, 'vero');
-  const COL_B_GUIA = findCol(bh, 'guia');
-  const COL_B_TOTAL = findCol(bh, 'consultas total') >= 0 ? findCol(bh, 'consultas total') : findCol(bh, 'total');
-  
-  console.log('B2C cols:', {COL_B_EMAGR, COL_B_ARAUJO, COL_B_VERO, COL_B_GUIA, COL_B_TOTAL});
+  // ── Parse Table 7: Dados mensais B2C ──
+  const dmB2cIdx = findRow(r, 'Dados mensais (B2C)', 0);
+  const dmBH = dmB2cIdx + 1;
+  const jan_b2c = { emagrecer: parseNum(r[dmBH+1][1]), araujo: parseNum(r[dmBH+1][2]), vero: parseNum(r[dmBH+1][3]), guia: parseNum(r[dmBH+1][4]), total: parseNum(r[dmBH+1][5]) };
+  const fev_b2c = { emagrecer: parseNum(r[dmBH+2][1]), araujo: parseNum(r[dmBH+2][2]), vero: parseNum(r[dmBH+2][3]), guia: parseNum(r[dmBH+2][4]), total: parseNum(r[dmBH+2][5]) };
 
-  const b2cDataIdx = b2cHdrIdx + 1;
-  const br = r[b2cDataIdx];
-  const b2c = {
-    emagrecer: parseNum(br[COL_B_EMAGR]),
-    araujo: parseNum(br[COL_B_ARAUJO]),
-    vero: parseNum(br[COL_B_VERO]),
-    guia: parseNum(br[COL_B_GUIA]),
-    total: parseNum(br[COL_B_TOTAL])
-  };
-  console.log('B2C:', b2c);
-
-  // Table 5: Dados mensais (Agendamentos)
-  const dmAgendIdx = findRow(r, 'dados mensais (agendamentos)', 0);
-  const dmAgendHdrIdx = dmAgendIdx + 1;
-  const dmah = r[dmAgendHdrIdx];
-  const COL_DMA_AGEND = findCol(dmah, 'agendamentos');
-  const COL_DMA_PRES = findCol(dmah, 'presença') >= 0 ? findCol(dmah, 'presença') : findCol(dmah, 'presen');
-  const COL_DMA_FALTA = findCol(dmah, 'falta');
-  const COL_DMA_PCTPRES = (() => {
-    for (let c = 0; c < dmah.length; c++) {
-      const v = (dmah[c]||'').trim().toLowerCase();
-      if ((v.includes('% pres') || v === '% presença') && !v.includes('total')) return c;
-    }
-    return -1;
-  })();
-  const COL_DMA_PCTFALTA = findCol(dmah, '% falta');
-
-  const janAgendIdx = findRow(r, 'janeiro', dmAgendHdrIdx + 1);
-  const fevAgendIdx = findRow(r, 'fevereiro', janAgendIdx + 1);
-
-  const jan_agend = {
-    agend: parseNum(r[janAgendIdx][COL_DMA_AGEND]),
-    pres: parseNum(r[janAgendIdx][COL_DMA_PRES]),
-    falta: parseNum(r[janAgendIdx][COL_DMA_FALTA]),
-    pctPres: parsePct(r[janAgendIdx][COL_DMA_PCTPRES]),
-    pctFalta: parsePct(r[janAgendIdx][COL_DMA_PCTFALTA])
-  };
-  const fev_agend = {
-    agend: parseNum(r[fevAgendIdx][COL_DMA_AGEND]),
-    pres: parseNum(r[fevAgendIdx][COL_DMA_PRES]),
-    falta: parseNum(r[fevAgendIdx][COL_DMA_FALTA]),
-    pctPres: parsePct(r[fevAgendIdx][COL_DMA_PCTPRES]),
-    pctFalta: parsePct(r[fevAgendIdx][COL_DMA_PCTFALTA])
-  };
-  console.log('JAN AGEND:', jan_agend, 'FEV AGEND:', fev_agend);
-
-  // Table 6: Dados mensais (Plantão)
-  const dmPlantIdx = findRow(r, 'dados mensais (plant', 0);
-  const dmPlantHdrIdx = dmPlantIdx + 1;
-  const dmph = r[dmPlantHdrIdx];
-  const COL_DMP_MEDIQUO = findCol(dmph, 'mediquo');
-  const COL_DMP_B2C = findCol(dmph, 'b2c');
-  const COL_DMP_TOTAL = findCol(dmph, 'consultas total') >= 0 ? findCol(dmph, 'consultas total') : findCol(dmph, 'total');
-  const COL_DMP_INTER = findCol(dmph, 'interaç') >= 0 ? findCol(dmph, 'interaç') : findCol(dmph, 'intera');
-
-  const janPlantIdx = findRow(r, 'janeiro', dmPlantHdrIdx + 1);
-  const fevPlantIdx = findRow(r, 'fevereiro', janPlantIdx + 1);
-
-  const jan_plant = {
-    mediquo: parseNum(r[janPlantIdx][COL_DMP_MEDIQUO]),
-    b2c: parseNum(r[janPlantIdx][COL_DMP_B2C]),
-    total: parseNum(r[janPlantIdx][COL_DMP_TOTAL]),
-    inter: parseNum(r[janPlantIdx][COL_DMP_INTER])
-  };
-  const fev_plant = {
-    mediquo: parseNum(r[fevPlantIdx][COL_DMP_MEDIQUO]),
-    b2c: parseNum(r[fevPlantIdx][COL_DMP_B2C]),
-    total: parseNum(r[fevPlantIdx][COL_DMP_TOTAL]),
-    inter: parseNum(r[fevPlantIdx][COL_DMP_INTER])
-  };
-  console.log('JAN PLANT:', jan_plant, 'FEV PLANT:', fev_plant);
-
-  // Table 7: Dados mensais (B2C)
-  const dmB2cIdx = findRow(r, 'dados mensais (b2c)', 0);
-  const dmB2cHdrIdx = dmB2cIdx + 1;
-  const dmbh = r[dmB2cHdrIdx];
-  const COL_DMB_EMAGR = findCol(dmbh, 'emagrecer');
-  const COL_DMB_ARAUJO = findCol(dmbh, 'araújo') >= 0 ? findCol(dmbh, 'araújo') : findCol(dmbh, 'araujo');
-  const COL_DMB_VERO = findCol(dmbh, 'vero');
-  const COL_DMB_GUIA = findCol(dmbh, 'guia');
-  const COL_DMB_TOTAL = findCol(dmbh, 'consultas total') >= 0 ? findCol(dmbh, 'consultas total') : findCol(dmbh, 'total');
-
-  const janB2cIdx = findRow(r, 'janeiro', dmB2cHdrIdx + 1);
-  const fevB2cIdx = findRow(r, 'fevereiro', janB2cIdx + 1);
-
-  const jan_b2c = {
-    emagrecer: parseNum(r[janB2cIdx][COL_DMB_EMAGR]),
-    araujo: parseNum(r[janB2cIdx][COL_DMB_ARAUJO]),
-    vero: parseNum(r[janB2cIdx][COL_DMB_VERO]),
-    guia: parseNum(r[janB2cIdx][COL_DMB_GUIA]),
-    total: parseNum(r[janB2cIdx][COL_DMB_TOTAL])
-  };
-  const fev_b2c = {
-    emagrecer: parseNum(r[fevB2cIdx][COL_DMB_EMAGR]),
-    araujo: parseNum(r[fevB2cIdx][COL_DMB_ARAUJO]),
-    vero: parseNum(r[fevB2cIdx][COL_DMB_VERO]),
-    guia: parseNum(r[fevB2cIdx][COL_DMB_GUIA]),
-    total: parseNum(r[fevB2cIdx][COL_DMB_TOTAL])
-  };
-  console.log('JAN B2C:', jan_b2c, 'FEV B2C:', fev_b2c);
-
-  // ══════════════════════════════════════
-  // RENDER
-  // ══════════════════════════════════════
+  // ══════════════ RENDER ══════════════
 
   // KPIs
   document.getElementById('kpi-interacoes').textContent = fmtNum(consultaTotal.inter);
   document.getElementById('kpi-consultas').textContent = fmtNum(consultaTotal.total);
   document.getElementById('kpi-b2c').textContent = fmtNum(b2c.total);
+  document.getElementById('kpi-b2c-sub').textContent = '4 canais ativos';
   document.getElementById('kpi-agend').textContent = fmtNum(agendTotal.agend);
   document.getElementById('kpi-agend-sub').textContent = fmtPct(agendTotal.pctPres) + ' de presença';
   document.getElementById('kpi-impacto').textContent = fmtBRL(agendTotal.impacto);
-  document.getElementById('kpi-impacto-sub').textContent = 'Custo das faltas';
 
   // Hours
   document.getElementById('hrs-agend').textContent = fmtNum(agendTotal.hrsAgend);
@@ -899,26 +605,26 @@ function render(r) {
   document.getElementById('hrs-aus').textContent = fmtNum(agendTotal.hrsAus);
   document.getElementById('hrs-aus-sub').textContent = 'Impacto: ' + fmtBRL(agendTotal.impacto);
 
-  // Interações por Área
-  const interLabels = consultaAreas.map(a => a.name);
-  const interData = consultaAreas.map(a => a.inter);
+  // Interações
+  const interLabels = consultaAreas.map(a=>a.name);
+  const interData = consultaAreas.map(a=>a.inter);
   document.getElementById('sub-inter-pie').textContent = 'Total: ' + fmtNum(consultaTotal.inter) + ' interações';
   new Chart(document.getElementById('interacoesPie'), pieConfig(interLabels, interData, ['#4a1ea7','#b83dba','#38bdf8']));
   new Chart(document.getElementById('interacoesBar'), barConfig(interLabels, interData, ['#4a1ea7','#b83dba','#38bdf8']));
 
-  // Consultas por Área
-  const consLabels = consultaAreas.map(a => a.name);
-  const consData = consultaAreas.map(a => a.mediquo);
+  // Consultas
+  const consLabels = consultaAreas.map(a=>a.name);
+  const consData = consultaAreas.map(a=>a.mediquo);
   document.getElementById('sub-cons-pie').textContent = 'Total: ' + fmtNum(consultaTotal.mediquo) + ' consultas MediQuo';
   new Chart(document.getElementById('consultasPie'), pieConfig(consLabels, consData, ['#4a1ea7','#b83dba','#38bdf8']));
   new Chart(document.getElementById('consultasBar'), barConfig(consLabels, consData, ['#4a1ea7','#b83dba','#38bdf8']));
 
   // B2C
   const b2cLabels = ['Emagrecer','Araújo','Vero','Guia da Alma'];
-  const b2cDataArr = [b2c.emagrecer, b2c.araujo, b2c.vero, b2c.guia];
+  const b2cData = [b2c.emagrecer, b2c.araujo, b2c.vero, b2c.guia];
   document.getElementById('sub-b2c-pie').textContent = 'Total: ' + fmtNum(b2c.total) + ' consultas B2C';
-  new Chart(document.getElementById('vendasPie'), pieConfig(b2cLabels, b2cDataArr, ['#10b981','#4a1ea7','#b83dba','#f59e0b']));
-  new Chart(document.getElementById('vendasBar'), barConfig(b2cLabels, b2cDataArr, ['#10b981','#4a1ea7','#b83dba','#f59e0b']));
+  new Chart(document.getElementById('vendasPie'), pieConfig(b2cLabels, b2cData, ['#10b981','#4a1ea7','#b83dba','#f59e0b']));
+  new Chart(document.getElementById('vendasBar'), barConfig(b2cLabels, b2cData, ['#10b981','#4a1ea7','#b83dba','#f59e0b']));
 
   // Presença / Falta
   document.getElementById('ring-pres-pct').textContent = fmtPct(agendTotal.pctPres);
@@ -931,25 +637,25 @@ function render(r) {
   new Chart(document.getElementById('presencaPie'), pieConfig(['Compareceu','Faltou'],[agendTotal.pres, agendTotal.falta],['#10b981','#f43f5e']));
   new Chart(document.getElementById('presencaBar'), barConfig([`Compareceu (${fmtPct(agendTotal.pctPres)})`,`Faltou (${fmtPct(agendTotal.pctFalta)})`],[agendTotal.pres, agendTotal.falta],['#10b981','#f43f5e']));
 
-  // Agendamentos por Área (including Dermatologia)
-  const agLabels = agendAreas.map(a => a.name);
-  const agData = agendAreas.map(a => a.agend);
+  // Agendamentos por área
+  const agLabels = agendAreas.map(a=>a.name);
+  const agData = agendAreas.map(a=>a.agend);
   document.getElementById('sub-agend-pie').textContent = 'Total: ' + fmtNum(agendTotal.agend) + ' agendamentos';
   new Chart(document.getElementById('agendPie'), pieConfig(agLabels, agData, ['#38bdf8','#b83dba','#4a1ea7','#7c4dff']));
   new Chart(document.getElementById('agendBar'), barConfig(agLabels, agData, ['#38bdf8','#b83dba','#4a1ea7','#7c4dff']));
 
   // Dermatologia antes x depois
   document.getElementById('derma-antes-agend').textContent = fmtNum(dermaAntes.agend);
-  document.getElementById('derma-antes-ocio').textContent = fmtPct(dermaAntes.ocio);
-  document.getElementById('derma-antes-impacto').textContent = fmtBRL(dermaAntes.impacto);
+  document.getElementById('derma-antes-ocio').textContent = dermaAntes.ocio;
+  document.getElementById('derma-antes-impacto').textContent = dermaAntes.impacto;
   document.getElementById('derma-depois-agend').textContent = fmtNum(dermaDepois.agend);
-  document.getElementById('derma-depois-ocio').textContent = fmtPct(dermaDepois.ocio);
-  document.getElementById('derma-depois-impacto').textContent = fmtBRL(dermaDepois.impacto);
-  document.getElementById('derma-reducao').textContent = fmtPct(dermaDepois.reducao);
-  document.getElementById('derma-proporcao').textContent = fmtBRL(dermaDepois.proporcao);
+  document.getElementById('derma-depois-ocio').textContent = dermaDepois.ocio;
+  document.getElementById('derma-depois-impacto').textContent = dermaDepois.impacto;
+  document.getElementById('derma-reducao').textContent = dermaDepois.reducao;
+  document.getElementById('derma-proporcao').textContent = dermaDepois.proporcao;
 
   new Chart(document.getElementById('dermaBarAgend'), barConfig(['Antes','Depois'],[dermaAntes.agend, dermaDepois.agend],['#f43f5e','#10b981']));
-  new Chart(document.getElementById('dermaBarOcio'), barConfig(['Antes','Depois'],[dermaAntes.ocio, dermaDepois.ocio],['#f43f5e','#10b981']));
+  new Chart(document.getElementById('dermaBarOcio'), barConfig(['Antes','Depois'],[parsePct(dermaAntes.ocio), parsePct(dermaDepois.ocio)],['#f43f5e','#10b981']));
 
   // ── Comparação Mensal: Agendamentos ──
   const compAgendMetrics = [
@@ -1013,7 +719,7 @@ function render(r) {
     ]
   ));
 
-  // Done
+  // Done — hide loading
   document.getElementById('loading-overlay').classList.add('hide');
   document.getElementById('app').style.opacity = '1';
 }
@@ -1035,6 +741,7 @@ function renderCompCards(containerId, metrics) {
   }).join('');
 }
 
+// ── Boot ──
 main();
 </script>
 </body>
